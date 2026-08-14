@@ -1,0 +1,11 @@
+# Docker
+docker-compose.yml
+docker-compose.db.yml
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
