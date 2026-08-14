@@ -1,6 +1,6 @@
-# StockPulse - Inventory Management System
+# Beks Tech - Inventory & Retail Management System
 
-A mobile-first inventory management system for stores with subscription-based access, built using the same stack as the escrow-app.
+A Nigerian SME-focused inventory and retail management SaaS for products, inventory, purchasing, sales, customer credit, suppliers, expenses, branches, reports, audit logs and subscriptions.
 
 ## Tech Stack
 
@@ -11,6 +11,7 @@ A mobile-first inventory management system for stores with subscription-based ac
 - PostgreSQL 14.1
 - Redis
 - Paystack Payment Integration
+- WhatsApp notification integration hooks
 - Lombok
 
 ### Frontend
@@ -31,6 +32,11 @@ A mobile-first inventory management system for stores with subscription-based ac
 - **Subscription Management**: Admin creates plans, users subscribe via Paystack
 - **Admin Panel**: Manage subscription plans and view users
 - **Dashboard**: Real-time stats (products, low stock, revenue, sales)
+- **Beks Tech Specification Workspace**: In-app product blueprint covering MVP scope, Nigerian market defaults, roadmap, and providers used/planned
+- **Returns & Refunds**: Return records with reasons, refund method, item-level quantities, restock flags, and status tracking
+- **Notifications & Alerts**: Dashboard/email/push/WhatsApp-ready alert records for stock, expiry, debt, and operational reminders
+- **Offline POS Foundation**: Local product cache, queued offline sales, unique offline references, and auto-sync when connectivity returns
+- **Pricing & Monetization**: 14-day Business trial, Starter/Business/Growth/Enterprise launch plans, annual pricing, and WhatsApp Commerce commission modeling
 
 ## Getting Started
 
@@ -84,6 +90,18 @@ EMAIL_HOST_PASSWORD=your-app-password
 CORS_ORIGINS=http://localhost:5173,http://localhost:80
 ```
 
+## Providers Used / Planned
+
+- **Paystack**: subscription billing and Nigerian payment collection workflows.
+- **WhatsApp Business Platform**: planned customer debt reminders, expiry/low-stock alerts, and receipt sharing.
+- **Email/SMPP or push provider**: fallback notifications for alerts, invitations, and reminders.
+- **PostgreSQL**: transactional inventory, financial, and audit data.
+- **Redis**: caching/session support for fast dashboard and low-bandwidth API usage.
+
+## Pricing & Monetization
+
+Launch pricing follows a 14-day full-featured Business trial followed by paid subscriptions: Starter at ₦5,000/month, Business at ₦10,000/month, Growth at ₦20,000/month, and custom Enterprise pricing. Annual subscriptions use approximately two months free, with Starter at ₦50,000/year, Business at ₦100,000/year, and Growth at ₦200,000/year. WhatsApp Commerce is monetized separately from Paystack processing fees: Business uses a 1% platform commission, Growth uses 0.5%, and Enterprise is negotiated.
+
 ## Subscription Plans
 
 The admin can create subscription plans via the `/admin/plans` endpoint. Each plan defines:
@@ -91,6 +109,10 @@ The admin can create subscription plans via the `/admin/plans` endpoint. Each pl
 - Max products limit
 - Max users limit
 - Features description
+- 14-day trial duration
+- Annual price
+- Hero/recommended plan flag
+- WhatsApp Commerce availability and commission percentage
 - Active/inactive status
 
 Users can subscribe to plans via the mobile app with Paystack payment integration.
@@ -140,8 +162,19 @@ stock-mgmt-app/
 - `GET /api/v1/stores/{storeId}/sales` - List sales
 - `GET /api/v1/stores/{storeId}/dashboard/stats` - Dashboard stats
 
+### Returns
+- `POST /api/v1/stores/{storeId}/returns` - Create return/refund record
+- `GET /api/v1/stores/{storeId}/returns` - List return/refund records
+
+### Notifications
+- `POST /api/v1/stores/{storeId}/notifications` - Create alert/notification
+- `GET /api/v1/stores/{storeId}/notifications` - List notifications
+- `POST /api/v1/stores/{storeId}/notifications/{notificationId}/read` - Mark notification as read
+
 ### Subscriptions
 - `GET /api/v1/subscriptions/plans` - Available plans
+- `POST /api/v1/subscriptions/trial` - Start 14-day Business trial
+- `POST /api/v1/subscriptions/commerce-fee-quote` - Calculate WhatsApp Commerce platform commission and merchant settlement
 - `GET /api/v1/subscriptions/current` - Current subscription
 - `POST /api/v1/subscriptions/initiate` - Initiate Paystack payment
 - `POST /api/v1/subscriptions/verify` - Verify payment

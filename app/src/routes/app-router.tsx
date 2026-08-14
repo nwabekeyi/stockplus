@@ -18,6 +18,10 @@ import TransfersPage from '../pages/transfers/TransfersPage'
 import BranchesPage from '../pages/branches/BranchesPage'
 import AuditLogsPage from '../pages/audit-logs/AuditLogsPage'
 import POSPage from '../pages/pos/POSPage'
+import BeksTechPage from '../pages/beks-tech/BeksTechPage'
+import ReturnsPage from '../pages/returns/ReturnsPage'
+import NotificationsPage from '../pages/notifications/NotificationsPage'
+import PricingPage from '../pages/pricing/PricingPage'
 import { useAuth } from '../contexts/AuthContext'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -71,12 +75,16 @@ export const router = createBrowserRouter([
       { path: 'expenses', element: <ExpensesPage /> },
       { path: 'reports', element: <ReportsPage /> },
       { path: 'subscription', element: <SubscriptionPage /> },
+      { path: 'pricing', element: <PricingPage /> },
       { path: 'admin/plans', element: <AdminPlansPage /> },
       { path: 'stock-movements', element: <StockMovementsPage /> },
       { path: 'transfers', element: <TransfersPage /> },
       { path: 'branches', element: <BranchesPage /> },
       { path: 'audit-logs', element: <AuditLogsPage /> },
       { path: 'pos', element: <POSPage /> },
+      { path: 'returns', element: <ReturnsPage /> },
+      { path: 'notifications', element: <NotificationsPage /> },
+      { path: 'beks-tech', element: <BeksTechPage /> },
     ],
   },
 ])

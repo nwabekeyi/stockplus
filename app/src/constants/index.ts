@@ -1,4 +1,4 @@
-export const APP_NAME = 'StockPulse'
+export const APP_NAME = 'Beks Tech'
 export const API_BASE = '/api/v1'
 
 export const TAB_ITEMS = [

@@ -1,7 +1,7 @@
 export const API_BASE = '/api/v1'
 
 export type UserRole = 'ROLE_USER' | 'ROLE_ADMIN'
-export type SubscriptionStatus = 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | 'PENDING'
+export type SubscriptionStatus = 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | 'PENDING' | 'TRIAL'
 export type BillingInterval = 'MONTHLY' | 'YEARLY'
 export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED'
 export type PurchaseStatus = 'PENDING' | 'RECEIVED' | 'CANCELLED'
@@ -64,7 +64,12 @@ export interface SubscriptionPlan {
   maxProducts: number
   maxUsers: number
   maxBranches: number
+  trialDays: number
+  annualPrice?: number
+  heroPlan: boolean
   whatsappEnabled: boolean
+  whatsappCommerceEnabled: boolean
+  whatsappCommerceCommissionPercent: number
   advancedReportsEnabled: boolean
   apiEnabled: boolean
   active: boolean
@@ -296,4 +301,35 @@ export interface CartItem {
   quantity: number
   unitPrice: number
   costPrice: number
+}
+
+export interface ReturnItem {
+  productId: string
+  productName: string
+  quantity: number
+  unitPrice: number
+  restock: boolean
+}
+
+export interface ReturnRecord {
+  id: string
+  saleId?: string
+  reference: string
+  reason: string
+  refundAmount: number
+  status: string
+  refundMethod?: string
+  approvedBy?: string
+  createdAt: string
+  items: ReturnItem[]
+}
+
+export interface Notification {
+  id: string
+  title: string
+  message: string
+  channel: 'DASHBOARD' | 'EMAIL' | 'PUSH' | 'WHATSAPP'
+  status: 'UNREAD' | 'READ' | 'SENT' | 'FAILED'
+  target?: string
+  createdAt: string
 }

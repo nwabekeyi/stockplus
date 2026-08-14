@@ -30,6 +30,10 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
     { to: "/customers", icon: IconUserPlus, label: "Customers", match: (p: string) => p.startsWith("/customers") },
     { to: "/expenses", icon: IconCreditCard, label: "Expenses", match: (p: string) => p.startsWith("/expenses") },
     { to: "/reports", icon: IconBarChart2, label: "Reports", match: (p: string) => p.startsWith("/reports") },
+    { to: "/pricing", icon: IconCreditCard, label: "Pricing", match: (p: string) => p.startsWith("/pricing") },
+    { to: "/returns", icon: IconCreditCard, label: "Returns", match: (p: string) => p.startsWith("/returns") },
+    { to: "/notifications", icon: IconAlertTriangle, label: "Alerts", match: (p: string) => p.startsWith("/notifications") },
+    { to: "/beks-tech", icon: IconPackage, label: "Beks Tech", match: (p: string) => p.startsWith("/beks-tech") },
   ];
 
   useEffect(() => {
