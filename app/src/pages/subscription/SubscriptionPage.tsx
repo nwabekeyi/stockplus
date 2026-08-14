@@ -28,6 +28,12 @@ export default function SubscriptionPage() {
     }
   }
 
+  const handleStartTrial = async () => {
+    if (!storeId) return
+    await apiPost(`/subscriptions/trial?storeId=${storeId}`, {})
+    await fetchData()
+  }
+
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!storeId) return
     setInitiating(true)
@@ -53,7 +59,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900">Subscription Plans</h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-xl font-bold text-gray-900">Subscription Plans</h2><p className="text-sm text-gray-500">Start with a 14-day Business trial, then choose Starter, Business, Growth, or Enterprise.</p></div>{!subscription && <button onClick={handleStartTrial} className="rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-bold text-white">Start 14-Day Trial</button>}</div>
 
       {subscription && subscription.status === 'ACTIVE' && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-5 flex items-center gap-4">
@@ -75,10 +81,10 @@ export default function SubscriptionPage() {
                 <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
                 <p className="text-sm text-gray-500">{plan.billingInterval}</p>
               </div>
-              <p className="text-xl font-bold text-primary-600">{plan.price.toLocaleString()}</p>
+              <div className="text-right"><p className="text-xl font-bold text-primary-600">₦{plan.price.toLocaleString()}</p>{plan.heroPlan && <p className="text-xs font-bold text-emerald-600">Recommended</p>}</div>
             </div>
 
-            <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
+            <p className="text-sm text-gray-600 mb-2">{plan.description}</p><p className="mb-4 text-xs font-semibold text-emerald-700">Annual: {plan.annualPrice ? `₦${plan.annualPrice.toLocaleString()}` : 'Custom'} · Trial: {plan.trialDays} days</p>
 
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
@@ -95,6 +101,9 @@ export default function SubscriptionPage() {
             <div className="flex flex-wrap gap-2 mb-4">
               {plan.whatsappEnabled && (
                 <span className="px-2 py-1 bg-blue-50 rounded-full text-xs text-blue-700">WhatsApp</span>
+              )}
+              {plan.whatsappCommerceEnabled && (
+                <span className="px-2 py-1 bg-emerald-50 rounded-full text-xs text-emerald-700">Commerce {plan.whatsappCommerceCommissionPercent}%</span>
               )}
               {plan.advancedReportsEnabled && (
                 <span className="px-2 py-1 bg-purple-50 rounded-full text-xs text-purple-700">Advanced Reports</span>

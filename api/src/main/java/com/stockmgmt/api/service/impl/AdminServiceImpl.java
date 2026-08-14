@@ -33,7 +33,12 @@ public class AdminServiceImpl implements AdminService {
                 .maxProducts(request.getMaxProducts())
                 .maxUsers(request.getMaxUsers())
                 .maxBranches(request.getMaxBranches())
+                .trialDays(request.getTrialDays() == 0 ? 14 : request.getTrialDays())
+                .annualPrice(request.getAnnualPrice())
+                .heroPlan(request.isHeroPlan())
                 .whatsappEnabled(request.isWhatsappEnabled())
+                .whatsappCommerceEnabled(request.isWhatsappCommerceEnabled())
+                .whatsappCommerceCommissionPercent(request.getWhatsappCommerceCommissionPercent() == null ? BigDecimal.ZERO : request.getWhatsappCommerceCommissionPercent())
                 .advancedReportsEnabled(request.isAdvancedReportsEnabled())
                 .apiEnabled(request.isApiEnabled())
                 .active(request.isActive())
@@ -64,7 +69,12 @@ public class AdminServiceImpl implements AdminService {
         plan.setMaxProducts(request.getMaxProducts());
         plan.setMaxUsers(request.getMaxUsers());
         plan.setMaxBranches(request.getMaxBranches());
+        plan.setTrialDays(request.getTrialDays() == 0 ? 14 : request.getTrialDays());
+        plan.setAnnualPrice(request.getAnnualPrice());
+        plan.setHeroPlan(request.isHeroPlan());
         plan.setWhatsappEnabled(request.isWhatsappEnabled());
+        plan.setWhatsappCommerceEnabled(request.isWhatsappCommerceEnabled());
+        plan.setWhatsappCommerceCommissionPercent(request.getWhatsappCommerceCommissionPercent() == null ? BigDecimal.ZERO : request.getWhatsappCommerceCommissionPercent());
         plan.setAdvancedReportsEnabled(request.isAdvancedReportsEnabled());
         plan.setApiEnabled(request.isApiEnabled());
         plan.setActive(request.isActive());
@@ -107,7 +117,12 @@ public class AdminServiceImpl implements AdminService {
                 .maxProducts(plan.getMaxProducts())
                 .maxUsers(plan.getMaxUsers())
                 .maxBranches(plan.getMaxBranches())
+                .trialDays(plan.getTrialDays())
+                .annualPrice(plan.getAnnualPrice())
+                .heroPlan(plan.isHeroPlan())
                 .whatsappEnabled(plan.isWhatsappEnabled())
+                .whatsappCommerceEnabled(plan.isWhatsappCommerceEnabled())
+                .whatsappCommerceCommissionPercent(plan.getWhatsappCommerceCommissionPercent())
                 .advancedReportsEnabled(plan.isAdvancedReportsEnabled())
                 .apiEnabled(plan.isApiEnabled())
                 .active(plan.isActive())

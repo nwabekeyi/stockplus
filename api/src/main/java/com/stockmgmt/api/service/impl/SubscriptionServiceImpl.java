@@ -2,9 +2,10 @@ package com.stockmgmt.api.service.impl;
 
 import com.stockmgmt.api.config.AppProperties;
 import com.stockmgmt.api.entity.*;
-import com.stockmgmt.api.entity.dto.request.CreatePlanRequest;
+import com.stockmgmt.api.entity.dto.request.CommerceFeeQuoteRequest;
 import com.stockmgmt.api.entity.dto.request.InitiateSubscriptionRequest;
 import com.stockmgmt.api.entity.dto.request.VerifySubscriptionRequest;
+import com.stockmgmt.api.entity.dto.response.CommerceFeeQuoteResponse;
 import com.stockmgmt.api.entity.dto.response.PaystackInitResponse;
 import com.stockmgmt.api.entity.dto.response.SubscriptionPlanResponse;
 import com.stockmgmt.api.entity.dto.response.SubscriptionResponse;
@@ -57,6 +58,54 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         return mapToResponse(subscription);
     }
 
+
+    @Override
+    @Transactional
+    public SubscriptionResponse startTrial(UUID storeId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Store not found"));
+        Subscription existing = subscriptionRepository.findByStore_Id(storeId).orElse(null);
+        if (existing != null) {
+            return mapToResponse(existing);
+        }
+        SubscriptionPlan businessPlan = planRepository.findByActiveTrue().stream()
+                .filter(plan -> "Business".equalsIgnoreCase(plan.getName()))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Business trial plan not found"));
+        Subscription trial = Subscription.builder()
+                .store(store)
+                .plan(businessPlan)
+                .status(SubscriptionStatus.TRIAL)
+                .paymentStatus(PaymentStatus.PENDING)
+                .startDate(LocalDateTime.now())
+                .endDate(LocalDateTime.now().plusDays(businessPlan.getTrialDays()))
+                .autoRenew(false)
+                .build();
+        subscriptionRepository.save(trial);
+        return mapToResponse(trial);
+    }
+
+    @Override
+    public CommerceFeeQuoteResponse quoteCommerceFees(CommerceFeeQuoteRequest request) {
+        SubscriptionPlan plan = planRepository.findById(request.getPlanId())
+                .orElseThrow(() -> new ResourceNotFoundException("Plan not found"));
+        BigDecimal commissionPercent = plan.getWhatsappCommerceCommissionPercent();
+        BigDecimal platformCommission = request.getOrderAmount()
+                .multiply(commissionPercent)
+                .divide(new BigDecimal("100"));
+        BigDecimal processingFee = request.getPaymentProcessingFee() == null ? BigDecimal.ZERO : request.getPaymentProcessingFee();
+        return CommerceFeeQuoteResponse.builder()
+                .planId(plan.getId())
+                .planName(plan.getName())
+                .orderAmount(request.getOrderAmount())
+                .commissionPercent(commissionPercent)
+                .platformCommission(platformCommission)
+                .paymentProcessingFee(processingFee)
+                .merchantSettlement(request.getOrderAmount().subtract(platformCommission).subtract(processingFee))
+                .whatsappCommerceEnabled(plan.isWhatsappCommerceEnabled())
+                .build();
+    }
+
     @Override
     @Transactional
     public SubscriptionResponse initiateSubscription(UUID storeId, InitiateSubscriptionRequest request) {
@@ -77,7 +126,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .status(SubscriptionStatus.PENDING)
                 .paymentStatus(PaymentStatus.PENDING)
                 .startDate(LocalDateTime.now())
-                .endDate(LocalDateTime.now().plusMonths(1))
+                .endDate(request.getBillingInterval() == BillingInterval.YEARLY ? LocalDateTime.now().plusYears(1) : LocalDateTime.now().plusMonths(1))
                 .autoRenew(true)
                 .build();
 
@@ -119,7 +168,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         Map<String, Object> body = new HashMap<>();
         body.put("email", subscription.getStore().getOwner().getEmail());
-        body.put("amount", plan.getPrice().multiply(new BigDecimal("100")));
+        BigDecimal chargeAmount = interval == BillingInterval.YEARLY && plan.getAnnualPrice() != null ? plan.getAnnualPrice() : plan.getPrice();
+        body.put("amount", chargeAmount.multiply(new BigDecimal("100")));
         body.put("reference", "SUB-" + subscription.getId().toString().replace("-", "").substring(0, 16).toUpperCase());
 
         Map<String, String> metadata = new HashMap<>();
@@ -166,7 +216,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .maxProducts(plan.getMaxProducts())
                 .maxUsers(plan.getMaxUsers())
                 .maxBranches(plan.getMaxBranches())
+                .trialDays(plan.getTrialDays())
+                .annualPrice(plan.getAnnualPrice())
+                .heroPlan(plan.isHeroPlan())
                 .whatsappEnabled(plan.isWhatsappEnabled())
+                .whatsappCommerceEnabled(plan.isWhatsappCommerceEnabled())
+                .whatsappCommerceCommissionPercent(plan.getWhatsappCommerceCommissionPercent())
                 .advancedReportsEnabled(plan.isAdvancedReportsEnabled())
                 .apiEnabled(plan.isApiEnabled())
                 .active(plan.isActive())

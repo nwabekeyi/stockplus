@@ -4,6 +4,19 @@ import { Product } from '../../types'
 import { useStoreId } from '../../hooks/use-store-id'
 import { FiX, FiMinus, FiPlus, FiShoppingCart, FiSearch } from 'react-icons/fi'
 
+interface OfflineQueuedSale {
+  id: string
+  payload: {
+    offlineReference: string
+    customerName: string
+    customerPhone: string
+    paymentMethod: string
+    paymentStatus: string
+    discount: number
+    items: { productId: string; quantity: number; unitPrice: number }[]
+  }
+}
+
 export interface CartItem {
   productId: string
   productName: string
@@ -22,12 +35,47 @@ export default function POSPage() {
   const [customerPhone, setCustomerPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [showCart, setShowCart] = useState(false)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [queuedSales, setQueuedSales] = useState(() => (JSON.parse(localStorage.getItem('offlineSalesQueue') || '[]') as OfflineQueuedSale[]).length)
 
   useEffect(() => {
     if (!storeId) return
     apiGet<Product[]>(`/stores/${storeId}/products`)
-      .then(setProducts)
-      .catch(() => {})
+      .then((data) => {
+        setProducts(data)
+        localStorage.setItem('posProductCache', JSON.stringify(data))
+      })
+      .catch(() => {
+        setProducts(JSON.parse(localStorage.getItem('posProductCache') || '[]'))
+      })
+  }, [storeId])
+
+  useEffect(() => {
+    const syncQueuedSales = async () => {
+      if (!storeId || !navigator.onLine) return
+      const queue = JSON.parse(localStorage.getItem('offlineSalesQueue') || '[]') as OfflineQueuedSale[]
+      const remaining: OfflineQueuedSale[] = []
+      for (const sale of queue) {
+        try {
+          await apiPost(`/stores/${storeId}/sales`, sale.payload)
+        } catch {
+          remaining.push(sale)
+        }
+      }
+      localStorage.setItem('offlineSalesQueue', JSON.stringify(remaining))
+      setQueuedSales(remaining.length)
+    }
+    const updateStatus = () => {
+      setIsOnline(navigator.onLine)
+      syncQueuedSales()
+    }
+    window.addEventListener('online', updateStatus)
+    window.addEventListener('offline', updateStatus)
+    syncQueuedSales()
+    return () => {
+      window.removeEventListener('online', updateStatus)
+      window.removeEventListener('offline', updateStatus)
+    }
   }, [storeId])
 
   const addToCart = (product: Product) => {
@@ -70,24 +118,34 @@ export default function POSPage() {
   const handleCheckout = async () => {
     if (!storeId || cart.length === 0) return
     setLoading(true)
+    const payload = {
+      offlineReference: `OFF-${Date.now()}`,
+      customerName,
+      customerPhone,
+      paymentMethod,
+      paymentStatus: paymentMethod === 'Credit' ? 'PENDING' : 'SUCCESS',
+      discount: 0,
+      items: cart.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      })),
+    }
     try {
-      await apiPost(`/stores/${storeId}/sales`, {
-        customerName,
-        customerPhone,
-        paymentMethod,
-        paymentStatus: 'SUCCESS',
-        discount: 0,
-        items: cart.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-        })),
-      })
+      if (!navigator.onLine) {
+        const queue = JSON.parse(localStorage.getItem('offlineSalesQueue') || '[]') as OfflineQueuedSale[]
+        queue.push({ id: payload.offlineReference, payload })
+        localStorage.setItem('offlineSalesQueue', JSON.stringify(queue))
+        setQueuedSales(queue.length)
+        alert('Sale saved offline and will sync when internet is restored.')
+      } else {
+        await apiPost(`/stores/${storeId}/sales`, payload)
+        alert('Sale completed successfully!')
+      }
       setCart([])
       setCustomerName('')
       setCustomerPhone('')
       setShowCart(false)
-      alert('Sale completed successfully!')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to complete sale')
     } finally {
@@ -103,6 +161,9 @@ export default function POSPage() {
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-8rem)]">
       <div className="flex-1 space-y-4 min-w-0">
+        <div className={`rounded-xl px-4 py-3 text-sm font-bold ${isOnline ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+          {isOnline ? 'Online POS' : 'Offline POS'} · {queuedSales} queued sale{queuedSales === 1 ? '' : 's'}
+        </div>
         <div className="relative">
           <FiSearch className="absolute left-3 top-3 text-gray-400" size={20} />
           <input

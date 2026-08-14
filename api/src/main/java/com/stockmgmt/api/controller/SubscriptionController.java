@@ -1,6 +1,6 @@
 package com.stockmgmt.api.controller;
 
-import com.stockmgmt.api.entity.dto.request.CreatePlanRequest;
+import com.stockmgmt.api.entity.dto.request.CommerceFeeQuoteRequest;
 import com.stockmgmt.api.entity.dto.request.InitiateSubscriptionRequest;
 import com.stockmgmt.api.entity.dto.request.VerifySubscriptionRequest;
 import com.stockmgmt.api.entity.dto.response.*;
@@ -31,6 +31,16 @@ public class SubscriptionController {
     @GetMapping("/subscriptions/current")
     public ResponseEntity<SubscriptionResponse> getCurrentSubscription(@RequestParam UUID storeId) {
         return ResponseEntity.ok(subscriptionService.getCurrentSubscription(storeId));
+    }
+
+    @PostMapping("/subscriptions/trial")
+    public ResponseEntity<SubscriptionResponse> startTrial(@RequestParam UUID storeId) {
+        return ResponseEntity.ok(subscriptionService.startTrial(storeId));
+    }
+
+    @PostMapping("/subscriptions/commerce-fee-quote")
+    public ResponseEntity<CommerceFeeQuoteResponse> quoteCommerceFees(@Valid @RequestBody CommerceFeeQuoteRequest request) {
+        return ResponseEntity.ok(subscriptionService.quoteCommerceFees(request));
     }
 
     @PostMapping("/subscriptions/initiate")

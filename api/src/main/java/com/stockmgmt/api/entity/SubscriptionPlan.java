@@ -50,7 +50,26 @@ public class SubscriptionPlan {
     private int maxBranches;
 
     @Column(nullable = false)
+    @Builder.Default
+    private int trialDays = 14;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal annualPrice;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean heroPlan = false;
+
+    @Column(nullable = false)
     private boolean whatsappEnabled = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean whatsappCommerceEnabled = false;
+
+    @Column(nullable = false, precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal whatsappCommerceCommissionPercent = BigDecimal.ZERO;
 
     @Column(nullable = false)
     private boolean advancedReportsEnabled = false;
