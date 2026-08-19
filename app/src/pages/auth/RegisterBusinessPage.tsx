@@ -62,7 +62,7 @@ export default function RegisterBusinessPage() {
         setUploadingLogo(false);
       }
 
-      const store = await apiPost<{ id: string; name: string; currency: string }>('/stores', {
+      const store = await apiPost<{ id?: string; name?: string; currency?: string; offlineQueued?: boolean }>('/stores', {
         name: form.name,
         logo: logoUrl,
         addressNumber: form.addressNumber,
@@ -78,14 +78,19 @@ export default function RegisterBusinessPage() {
         openTime: form.openTime,
         closeTime: form.closeTime,
         taxNumber: form.taxNumber,
+        planId: auth.user?.planId,
+        offlineOnly: auth.user?.canUseCloudSync === false,
       });
 
       const updatedUser = {
         ...auth.user,
         hasStore: true,
-        storeId: store.id,
-        storeName: store.name,
-        storeCurrency: store.currency,
+        storeId: store.id || crypto.randomUUID(),
+        storeName: store.name || form.name,
+        storeCurrency: store.currency || 'NGN',
+        planId: auth.user?.planId,
+        planName: auth.user?.planName,
+        canUseCloudSync: auth.user?.canUseCloudSync,
       } as User;
 
       auth.login(updatedUser);

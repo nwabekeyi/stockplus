@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { IconEye, IconEyeOff, IconPackage } from "../../components/common/icons";
 import Logo from "../../components/common/Logo";
-import { apiPost, ApiError } from "../../services/api-client";
-import type { User } from "../../types";
+import { apiGet, apiPost, ApiError } from "../../services/api-client";
+import type { SubscriptionPlan, User } from "../../types";
+import { defaultSubscriptionPlans, getPlansWithFallback, isFreePlan } from "../../services/offline-db";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -18,10 +19,16 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    planId: "free-offline",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState("");
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(defaultSubscriptionPlans);
+
+  useEffect(() => {
+    getPlansWithFallback(() => apiGet<SubscriptionPlan[]>("/subscriptions/plans")).then(setPlans);
+  }, []);
 
   if (auth.isAuthenticated) {
     return <Navigate to={auth.user?.hasStore ? "/" : "/register-business"} replace />;
@@ -44,8 +51,15 @@ export default function RegisterPage() {
         lastName: form.lastName,
         email: form.email,
         password: form.password,
+        planId: form.planId,
       });
-      auth.login(user);
+      const selectedPlan = plans.find((plan) => plan.id === form.planId);
+      auth.login({
+        ...user,
+        planId: form.planId,
+        planName: selectedPlan?.name,
+        canUseCloudSync: !isFreePlan(form.planId),
+      });
       navigate(user.hasStore ? "/" : "/register-business", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -188,6 +202,25 @@ export default function RegisterPage() {
                   {showConfirmPassword ? <IconEyeOff className="w-5 h-5" /> : <IconEye className="w-5 h-5" />}
                 </button>
               </div>
+            </div>
+
+
+            <div className="space-y-2">
+              <label htmlFor="planId" className="block text-sm font-semibold text-gray-700">Choose how your data is stored</label>
+              <select
+                id="planId"
+                value={form.planId}
+                onChange={(e) => { setForm({ ...form, planId: e.target.value }); }}
+                required
+                className="w-full px-4 py-3 rounded-xl border border-gray-200/80 bg-gray-50/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
+              >
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name} — {plan.price === 0 ? "offline only" : `₦${plan.price.toLocaleString()}/mo cloud sync`}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs font-medium text-gray-500">Free users use only this browser's IndexedDB backup. Subscription plans can connect and sync with the backend database.</p>
             </div>
 
             <div className="pt-2">

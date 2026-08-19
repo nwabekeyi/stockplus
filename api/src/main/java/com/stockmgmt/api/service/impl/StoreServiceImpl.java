@@ -43,8 +43,8 @@ public class StoreServiceImpl implements StoreService {
     public Store createStore(Store store) {
         Store savedStore = storeRepository.save(store);
 
-        SubscriptionPlan freeTier = subscriptionPlanRepository.findByName("Starter")
-                .orElseThrow(() -> new RuntimeException("Starter plan not found"));
+        SubscriptionPlan freeTier = subscriptionPlanRepository.findByName("Free Offline")
+                .orElseThrow(() -> new RuntimeException("Free Offline plan not found"));
 
         Subscription subscription = Subscription.builder()
                 .store(savedStore)
@@ -114,7 +114,26 @@ public class StoreServiceImpl implements StoreService {
                 .active(true)
                 .build();
 
-        Store savedStore = createStore(store);
+        Store savedStore = storeRepository.save(store);
+
+        SubscriptionPlan selectedPlan = request.isOfflineOnly() || request.getPlanId() == null
+                ? subscriptionPlanRepository.findByName("Free Offline")
+                        .orElseThrow(() -> new RuntimeException("Free Offline plan not found"))
+                : subscriptionPlanRepository.findById(request.getPlanId())
+                        .orElseThrow(() -> new RuntimeException("Selected plan not found"));
+
+        Subscription subscription = Subscription.builder()
+                .store(savedStore)
+                .plan(selectedPlan)
+                .status("Free Offline".equalsIgnoreCase(selectedPlan.getName()) ? SubscriptionStatus.ACTIVE : SubscriptionStatus.PENDING)
+                .paymentStatus("Free Offline".equalsIgnoreCase(selectedPlan.getName()) ? PaymentStatus.SUCCESS : PaymentStatus.PENDING)
+                .startDate(LocalDateTime.now())
+                .endDate("Free Offline".equalsIgnoreCase(selectedPlan.getName()) ? null : LocalDateTime.now().plusDays(selectedPlan.getTrialDays()))
+                .autoRenew(!"Free Offline".equalsIgnoreCase(selectedPlan.getName()))
+                .build();
+        subscriptionRepository.save(subscription);
+
+        seedDefaultDashboardData(savedStore.getId());
 
         return StoreResponse.builder()
                 .id(savedStore.getId())

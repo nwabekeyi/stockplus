@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiPost } from '../../services/api-client'
 import { SubscriptionPlan } from '../../types'
+import { getPlansWithFallback } from '../../services/offline-db'
 import { useStoreId } from '../../hooks/use-store-id'
 
 const featureRows = [
@@ -25,7 +26,7 @@ export default function PricingPage() {
   const [quote, setQuote] = useState<{ platformCommission: number; merchantSettlement: number; commissionPercent: number } | null>(null)
 
   useEffect(() => {
-    apiGet<SubscriptionPlan[]>('/subscriptions/plans').then((data) => {
+    getPlansWithFallback(() => apiGet<SubscriptionPlan[]>('/subscriptions/plans')).then((data) => {
       setPlans(data)
       setQuotePlanId(data.find((plan) => plan.heroPlan)?.id || data[0]?.id || '')
     }).catch(() => {})

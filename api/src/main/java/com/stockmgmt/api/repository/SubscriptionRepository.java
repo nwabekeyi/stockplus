@@ -8,5 +8,6 @@ import java.util.UUID;
 
 public interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
     Optional<Subscription> findByStore_Id(UUID storeId);
+    Optional<Subscription> findByPaystackSubscriptionCode(String paystackSubscriptionCode);
     java.util.List<Subscription> findByStatus(com.stockmgmt.api.entity.enumeration.SubscriptionStatus status);
 }

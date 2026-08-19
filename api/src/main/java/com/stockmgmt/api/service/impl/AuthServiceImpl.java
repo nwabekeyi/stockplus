@@ -44,6 +44,9 @@ public class AuthServiceImpl implements AuthService {
                 .storeId(user.getStore() != null ? user.getStore().getId() : null)
                 .storeName(user.getStore() != null ? user.getStore().getName() : null)
                 .storeCurrency(user.getStore() != null ? user.getStore().getCurrency() : null)
+                .planId(user.getSubscriptionPlan() != null ? user.getSubscriptionPlan().getId() : null)
+                .planName(user.getSubscriptionPlan() != null ? user.getSubscriptionPlan().getName() : null)
+                .canUseCloudSync(user.hasActiveSubscription() && user.getSubscriptionPlan() != null && !"Free Offline".equalsIgnoreCase(user.getSubscriptionPlan().getName()))
                 .build();
     }
 

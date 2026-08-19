@@ -24,6 +24,7 @@ import ReturnsPage from '../pages/returns/ReturnsPage'
 import NotificationsPage from '../pages/notifications/NotificationsPage'
 import PricingPage from '../pages/pricing/PricingPage'
 import SettingsPage from '../pages/settings/SettingsPage'
+import WorkersPage from '../pages/workers/WorkersPage'
 import { useAuth } from '../contexts/AuthContext'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -97,6 +98,7 @@ export const router = createBrowserRouter([
       { path: 'notifications', element: <NotificationsPage /> },
       { path: 'beks-tech', element: <BeksTechPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'workers', element: <WorkersPage /> },
     ],
   },
 ])

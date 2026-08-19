@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiPost } from '../../services/api-client'
 import { SubscriptionPlan, Subscription } from '../../types'
+import { getPlansWithFallback, isFreePlan } from '../../services/offline-db'
 import { useStoreId } from '../../hooks/use-store-id'
 import { FiCheck } from 'react-icons/fi'
 
@@ -18,7 +19,7 @@ export default function SubscriptionPage() {
   const fetchData = async () => {
     try {
       const [plansData, subData] = await Promise.all([
-        apiGet<SubscriptionPlan[]>('/subscriptions/plans'),
+        getPlansWithFallback(() => apiGet<SubscriptionPlan[]>('/subscriptions/plans')),
         apiGet<Subscription>(`/subscriptions/current?storeId=${storeId}`).catch(() => null),
       ])
       setPlans(plansData)
@@ -35,7 +36,7 @@ export default function SubscriptionPage() {
   }
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {
-    if (!storeId) return
+    if (!storeId || isFreePlan(plan.id)) return
     setInitiating(true)
     try {
       const data = await apiPost<{ authorizationUrl: string }>(`/subscriptions/initiate?storeId=${storeId}`, {
@@ -120,10 +121,10 @@ export default function SubscriptionPage() {
             {subscription?.status !== 'ACTIVE' && (
               <button
                 onClick={() => handleSubscribe(plan)}
-                disabled={initiating}
+                disabled={initiating || isFreePlan(plan.id)}
                 className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 mt-auto"
               >
-                {initiating ? 'Processing...' : 'Subscribe'}
+                {isFreePlan(plan.id) ? 'Offline only' : initiating ? 'Opening Paystack checkout...' : 'Subscribe with Paystack'}
               </button>
             )}
           </div>

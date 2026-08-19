@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/auth-store'
 import type { ApiResponse } from '../types'
+import { isFreePlan, queueOfflineMutation } from './offline-db'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
 
@@ -56,11 +57,33 @@ export function apiGet<T>(endpoint: string): Promise<T> {
   return apiClient.get<ApiResponse<T>>(endpoint).then((res) => res.data.data)
 }
 
-export function apiPost<T>(endpoint: string, body: unknown): Promise<T> {
-  return apiClient.post<ApiResponse<T>>(endpoint, body).then((res) => res.data.data)
+function cloudSyncEnabled() {
+  const user = useAuthStore.getState().user
+  return user?.canUseCloudSync !== false && !isFreePlan(user?.planId)
 }
 
-export function apiPut<T>(endpoint: string, body: unknown): Promise<T> {
+export async function apiPost<T>(endpoint: string, body: unknown): Promise<T> {
+  if (!cloudSyncEnabled() && !endpoint.startsWith('/auth') && !endpoint.startsWith('/subscriptions/plans')) {
+    await queueOfflineMutation({ endpoint, method: 'POST', body, storeId: useAuthStore.getState().user?.storeId })
+    return { offlineQueued: true } as T
+  }
+
+  try {
+    return await apiClient.post<ApiResponse<T>>(endpoint, body).then((res) => res.data.data)
+  } catch (error) {
+    if (!navigator.onLine && !endpoint.startsWith('/auth')) {
+      await queueOfflineMutation({ endpoint, method: 'POST', body, storeId: useAuthStore.getState().user?.storeId })
+      return { offlineQueued: true } as T
+    }
+    throw error
+  }
+}
+
+export async function apiPut<T>(endpoint: string, body: unknown): Promise<T> {
+  if (!cloudSyncEnabled()) {
+    await queueOfflineMutation({ endpoint, method: 'PUT', body, storeId: useAuthStore.getState().user?.storeId })
+    return { offlineQueued: true } as T
+  }
   return apiClient.put<ApiResponse<T>>(endpoint, body).then((res) => res.data.data)
 }
 
@@ -93,6 +116,51 @@ export function apiUpload(
   ).then(res => res.data.data)
 }
 
-export function apiDelete<T>(endpoint: string): Promise<T> {
+export async function apiDelete<T>(endpoint: string): Promise<T> {
+  if (!cloudSyncEnabled()) {
+    await queueOfflineMutation({ endpoint, method: 'DELETE', storeId: useAuthStore.getState().user?.storeId })
+    return { offlineQueued: true } as T
+  }
   return apiClient.delete<ApiResponse<T>>(endpoint).then((res) => res.data.data)
+}
+
+export async function syncOfflineQueue() {
+  if (!navigator.onLine || !cloudSyncEnabled()) return
+  const { offlineDb } = await import('./offline-db')
+  const user = useAuthStore.getState().user
+  if (!user?.storeId) return
+  const pending = await offlineDb.mutations.where('status').equals('pending').toArray()
+  if (pending.length === 0) return
+
+  for (const mutation of pending) {
+    if (mutation.id) await offlineDb.mutations.update(mutation.id, { status: 'syncing' })
+  }
+
+  try {
+    const response = await apiClient.post<ApiResponse<{ results: { clientMutationId: string; status: string; error?: string }[] }>>(`/offline-sync/${user.storeId}`, {
+      mutations: pending.map((mutation) => ({
+        clientMutationId: mutation.clientMutationId,
+        method: mutation.method,
+        endpoint: mutation.endpoint,
+        body: mutation.body,
+      })),
+    })
+
+    const results = response.data.data.results
+    for (const mutation of pending) {
+      if (!mutation.id) continue
+      const result = results.find((item) => item.clientMutationId === mutation.clientMutationId)
+      if (result?.status === 'accepted' || result?.status === 'duplicate') {
+        await offlineDb.mutations.delete(mutation.id)
+      } else {
+        await offlineDb.mutations.update(mutation.id, { status: 'failed', error: result?.error || 'Sync failed' })
+      }
+    }
+  } catch (error) {
+    for (const mutation of pending) {
+      if (mutation.id) {
+        await offlineDb.mutations.update(mutation.id, { status: 'pending', error: error instanceof Error ? error.message : 'Sync failed' })
+      }
+    }
+  }
 }
