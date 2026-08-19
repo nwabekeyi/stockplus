@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Category, Supplier, UnitOfMeasure } from '../../types'
 import { FiX } from 'react-icons/fi'
+import { apiUpload } from '../../services/api-client'
+import Dropzone from '../../components/common/Dropzone'
 
 interface AddProductModalProps {
   categories: Category[]
@@ -34,6 +36,8 @@ export default function AddProductModal({ categories, suppliers, onClose, onSave
     wholesaleRules: [] as { minQuantity: number; maxQuantity?: number; price: number }[],
   })
   const [loading, setLoading] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   useEffect(() => {
     if (editProduct) {
@@ -98,6 +102,13 @@ export default function AddProductModal({ categories, suppliers, onClose, onSave
     e.preventDefault()
     setLoading(true)
     try {
+      let imageUrl = form.image
+
+      if (imageFile) {
+        const uploadResult = await apiUpload('/upload/image', imageFile, 'products')
+        imageUrl = uploadResult.url
+      }
+
       const payload: any = {
         name: form.name,
         description: form.description,
@@ -106,7 +117,7 @@ export default function AddProductModal({ categories, suppliers, onClose, onSave
         wholesalePrice: form.wholesalePrice ? parseFloat(form.wholesalePrice) : undefined,
         sku: form.sku || undefined,
         barcode: form.barcode || undefined,
-        image: form.image || undefined,
+        image: imageUrl || undefined,
         categoryId: form.categoryId || null,
         supplierId: form.supplierId || null,
         batchNumber: form.batchNumber || undefined,
@@ -160,10 +171,15 @@ export default function AddProductModal({ categories, suppliers, onClose, onSave
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-            <input name="image" value={form.image} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-primary-500 outline-none text-sm" placeholder="https://example.com/image.png" />
-          </div>
+          <Dropzone
+            label="Product Image"
+            accept="image/*"
+            maxSizeMB={5}
+            preview={imagePreview}
+            onPreviewChange={setImagePreview}
+            onValueChange={(url) => setForm({ ...form, image: url })}
+            onFileSelect={(file) => setImageFile(file)}
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <div>

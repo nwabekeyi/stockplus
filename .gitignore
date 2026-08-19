@@ -66,3 +66,8 @@ coverage/
 
 # Docker
 docker-compose.override.yml
+
+\liquibase
+run-migration.sh
+
+dump.rdb

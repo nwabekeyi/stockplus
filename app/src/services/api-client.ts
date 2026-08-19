@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/auth-store'
+import type { ApiResponse } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
 
@@ -14,21 +15,11 @@ export class ApiError extends Error {
 
 export const apiClient = axios.create({
   baseURL: API_BASE,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 })
-
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = useAuthStore.getState().token || localStorage.getItem('accessToken')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
 
 apiClient.interceptors.response.use(
   (response) => response,
@@ -38,28 +29,14 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
-      const refreshToken = localStorage.getItem('refreshToken')
-      if (refreshToken) {
+      try {
+        await axios.post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true })
+        return apiClient(originalRequest)
+      } catch {
         try {
-          const { data } = await axios.post(
-            `${API_BASE}/auth/refresh`,
-            {},
-            {
-              headers: {
-                'X-Refresh-Token': refreshToken,
-              },
-            }
-          )
-
-          const newToken = data.data.accessToken
-          useAuthStore.getState().login(newToken, useAuthStore.getState().user!)
-
-          originalRequest.headers.Authorization = `Bearer ${newToken}`
-          return apiClient(originalRequest)
-        } catch {
-          useAuthStore.getState().logout()
-          window.location.href = '/login'
-        }
+          await axios.post(`${API_BASE}/auth/logout`, {}, { withCredentials: true })
+        } catch {}
+        useAuthStore.getState().logout()
       }
     }
 
@@ -76,17 +53,46 @@ apiClient.interceptors.response.use(
 )
 
 export function apiGet<T>(endpoint: string): Promise<T> {
-  return apiClient.get<T>(endpoint).then((res) => res.data.data)
+  return apiClient.get<ApiResponse<T>>(endpoint).then((res) => res.data.data)
 }
 
 export function apiPost<T>(endpoint: string, body: unknown): Promise<T> {
-  return apiClient.post<T>(endpoint, body).then((res) => res.data.data)
+  return apiClient.post<ApiResponse<T>>(endpoint, body).then((res) => res.data.data)
 }
 
 export function apiPut<T>(endpoint: string, body: unknown): Promise<T> {
-  return apiClient.put<T>(endpoint, body).then((res) => res.data.data)
+  return apiClient.put<ApiResponse<T>>(endpoint, body).then((res) => res.data.data)
+}
+
+export function apiUpload(
+  endpoint: string,
+  file: File,
+  folder?: string,
+  onProgress?: (progress: number) => void,
+): Promise<{ url: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  if (folder) {
+    formData.append('folder', folder)
+  }
+
+  return apiClient.post(
+    endpoint,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total && onProgress) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          onProgress(progress)
+        }
+      },
+    },
+  ).then(res => res.data.data)
 }
 
 export function apiDelete<T>(endpoint: string): Promise<T> {
-  return apiClient.delete<T>(endpoint).then((res) => res.data.data)
+  return apiClient.delete<ApiResponse<T>>(endpoint).then((res) => res.data.data)
 }

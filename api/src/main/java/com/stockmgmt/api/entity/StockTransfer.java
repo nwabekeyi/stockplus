@@ -49,12 +49,14 @@ public class StockTransfer {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private TransferStatus status = TransferStatus.PENDING;
 
     @Column
     private String notes;
 
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column

@@ -1,15 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import { useAuth } from "../../contexts/AuthContext";
-import { useAuthStore } from "../../store/auth-store";
 import { IconEye, IconEyeOff, IconPackage } from "../../components/common/icons";
-import { APP_NAME } from "../../constants";
+import Logo from "../../components/common/Logo";
 import { apiPost, ApiError } from "../../services/api-client";
+import type { User } from "../../types";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const auth = useAuth();
-  const authStore = useAuthStore();
   const [error, setError] = useState<string[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,14 +25,11 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiPost<{ accessToken: string; user: any }>('/auth/login', {
+      const user = await apiPost<User>('/auth/login', {
         email,
         password,
       });
-      const token = data.accessToken || data.token;
-      const user = data.user || data;
-      auth.login(token, user);
-      authStore.login(token, user);
+      auth.login(user);
       navigate("/", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -55,10 +51,7 @@ export default function LoginPage() {
           
           <div className="mb-10 text-center md:text-left">
             <Link to="/" className="inline-flex items-center gap-2 mb-8">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-sm">
-                <IconPackage className="w-4 h-4 text-white" />
-              </div>
-               <span className="text-xl font-bold text-gray-900 tracking-tight">{APP_NAME}</span>
+              <Logo />
             </Link>
             <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
               Welcome back

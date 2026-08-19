@@ -1,5 +1,6 @@
 package com.stockmgmt.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 import lombok.*;
@@ -25,6 +26,7 @@ public class ProductImage {
     @JoinColumn(name = "product_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Product product;
 
     @Column(nullable = false)

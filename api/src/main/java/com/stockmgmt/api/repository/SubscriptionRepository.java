@@ -1,7 +1,6 @@
 package com.stockmgmt.api.repository;
 
 import com.stockmgmt.api.entity.Subscription;
-import com.stockmgmt.api.entity.Store;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

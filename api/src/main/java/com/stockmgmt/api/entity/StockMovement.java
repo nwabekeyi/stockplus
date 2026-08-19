@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -58,5 +57,6 @@ public class StockMovement {
     private UUID userId;
 
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

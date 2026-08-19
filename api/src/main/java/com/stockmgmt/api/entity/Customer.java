@@ -40,13 +40,16 @@ public class Customer {
     private BigDecimal creditLimit = BigDecimal.ZERO;
 
     @Column(precision = 15, scale = 2)
+    @Builder.Default
     private BigDecimal outstandingBalance = BigDecimal.ZERO;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private CustomerStatus status = CustomerStatus.ACTIVE;
 
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToOne

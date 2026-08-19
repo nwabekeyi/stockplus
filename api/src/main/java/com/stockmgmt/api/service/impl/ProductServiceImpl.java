@@ -6,6 +6,7 @@ import com.stockmgmt.api.entity.dto.response.*;
 import com.stockmgmt.api.entity.enumeration.UnitOfMeasure;
 import com.stockmgmt.api.exception.ResourceNotFoundException;
 import com.stockmgmt.api.repository.*;
+import com.stockmgmt.api.service.CloudinaryService;
 import com.stockmgmt.api.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductImageRepository productImageRepository;
     private final ProductLocationRepository productLocationRepository;
     private final WholesalePriceRuleRepository wholesalePriceRuleRepository;
+    private final CloudinaryService cloudinaryService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Override
@@ -154,6 +156,11 @@ public class ProductServiceImpl implements ProductService {
             throw new RuntimeException("Product does not belong to this store");
         }
 
+        String oldImage = product.getImage();
+        if (request.getImage() != null && !request.getImage().equals(oldImage)) {
+            cloudinaryService.deleteImage(oldImage);
+        }
+
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setSellingPrice(request.getSellingPrice());
@@ -216,6 +223,14 @@ public class ProductServiceImpl implements ProductService {
         if (!product.getStore().getId().equals(storeId)) {
             throw new RuntimeException("Product does not belong to this store");
         }
+
+        cloudinaryService.deleteImage(product.getImage());
+
+        List<ProductImage> productImages = productImageRepository.findByProduct_IdOrderBySortOrderAsc(productId);
+        for (ProductImage productImage : productImages) {
+            cloudinaryService.deleteImage(productImage.getUrl());
+        }
+
         productRepository.delete(product);
     }
 

@@ -2,13 +2,17 @@ package com.stockmgmt.api.entity.dto.response;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DashboardStatsResponse {
+
     private int totalProducts;
     private int lowStockCount;
     private int totalSalesToday;

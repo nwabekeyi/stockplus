@@ -34,6 +34,14 @@ public class CreateStoreRequest {
 
     private String operatingHours;
 
+    private String operatingDaysFrom;
+
+    private String operatingDaysTo;
+
+    private String openTime;
+
+    private String closeTime;
+
     private String taxNumber;
 
     private String currency;

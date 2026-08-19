@@ -43,6 +43,7 @@ public class Expense {
     private String receipt;
 
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime expenseDate = LocalDateTime.now();
 
     @Column

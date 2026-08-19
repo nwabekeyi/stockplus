@@ -13,6 +13,12 @@ export type MovementType = 'OPENING' | 'PURCHASE' | 'SALE' | 'DAMAGED' | 'RETURN
 export type UnitOfMeasure = 'PIECE' | 'CARTON' | 'PACK' | 'KILOGRAM' | 'LITRE' | 'KEG' | 'BAG' | 'BOX' | 'DOZEN' | 'METER' | 'OTHER'
 export type ProductLocationType = 'SHELF' | 'WHOLESALE' | 'WAREHOUSE' | 'OTHER'
 
+export interface ApiResponse<T> {
+  message: string
+  error: string[]
+  data: T
+}
+
 export interface User {
   id: string
   email: string
@@ -21,7 +27,8 @@ export interface User {
   role: UserRole
   hasStore: boolean
   storeId?: string
-  accessToken?: string
+  storeName?: string
+  storeCurrency?: string
 }
 
 export interface AuthResponse {
@@ -34,7 +41,6 @@ export interface AuthResponse {
   storeId?: string
   storeName?: string
   storeCurrency?: string
-  accessToken: string
 }
 
 export interface Store {

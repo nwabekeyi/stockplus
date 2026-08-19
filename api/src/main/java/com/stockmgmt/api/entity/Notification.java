@@ -2,6 +2,7 @@ package com.stockmgmt.api.entity;
 
 import com.stockmgmt.api.entity.enumeration.NotificationChannel;
 import com.stockmgmt.api.entity.enumeration.NotificationStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
@@ -24,6 +25,9 @@ public class Notification {
 
     @ManyToOne
     @JoinColumn(name = "store_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Store store;
 
     @Column(nullable = false)
@@ -34,15 +38,18 @@ public class Notification {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private NotificationChannel channel = NotificationChannel.DASHBOARD;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private NotificationStatus status = NotificationStatus.UNREAD;
 
     @Column
     private String target;
 
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

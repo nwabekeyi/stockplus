@@ -20,6 +20,10 @@ public class StoreResponse {
     private String phoneNumber;
     private String contactInfo;
     private String operatingHours;
+    private String operatingDaysFrom;
+    private String operatingDaysTo;
+    private String openTime;
+    private String closeTime;
     private String taxNumber;
     private String currency;
     private boolean active;

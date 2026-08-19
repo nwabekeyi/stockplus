@@ -1,15 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import { useAuth } from "../../contexts/AuthContext";
-import { useAuthStore } from "../../store/auth-store";
 import { IconEye, IconEyeOff, IconPackage } from "../../components/common/icons";
-import { APP_NAME } from "../../constants";
+import Logo from "../../components/common/Logo";
 import { apiPost, ApiError } from "../../services/api-client";
+import type { User } from "../../types";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const auth = useAuth();
-  const authStore = useAuthStore();
   const [error, setError] = useState<string[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -25,7 +24,7 @@ export default function RegisterPage() {
   const [validationError, setValidationError] = useState("");
 
   if (auth.isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={auth.user?.hasStore ? "/" : "/register-business"} replace />;
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -40,17 +39,14 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiPost<{ accessToken: string; user: any }>('/auth/register', {
+      const user = await apiPost<User>('/auth/register', {
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
         password: form.password,
       });
-      const token = data.accessToken || data.token;
-      const user = data.user || data;
-      auth.login(token, user);
-      authStore.login(token, user);
-      navigate("/login", { replace: true });
+      auth.login(user);
+      navigate(user.hasStore ? "/" : "/register-business", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.errors.length > 0 ? err.errors : [err.message]);
@@ -73,10 +69,7 @@ export default function RegisterPage() {
           
           <div className="mb-8 text-center md:text-left">
             <Link to="/" className="inline-flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-sm">
-                <IconPackage className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900 tracking-tight">{APP_NAME}</span>
+              <Logo />
             </Link>
             <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
               Create your account

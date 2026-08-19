@@ -1,23 +1,13 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import axios from 'axios'
 import { apiGet } from '../services/api-client'
-
-interface User {
-  id: string
-  email: string
-  firstName: string
-  lastName: string
-  role: string
-  hasStore: boolean
-  storeId?: string
-  storeName?: string
-  storeCurrency?: string
-}
+import { useAuthStore } from '../store/auth-store'
+import type { User } from '../types'
 
 interface AuthContextType {
   user: User | null
-  token: string | null
-  login: (token: string, user: User) => void
-  logout: () => void
+  login: (user: User) => void
+  logout: () => Promise<void>
   isAuthenticated: boolean
   isLoading: boolean
 }
@@ -25,42 +15,40 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [token, setToken] = useState<string | null>(localStorage.getItem('accessToken'))
+  const user = useAuthStore((s) => s.user)
+  const loginStore = useAuthStore((s) => s.login)
+  const logoutStore = useAuthStore((s) => s.logout)
+
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const initAuth = async () => {
-      const stored = localStorage.getItem('accessToken')
-      if (stored) {
-        try {
-          const data = await apiGet<User>('/auth/me')
-          setUser(data)
-          setToken(stored)
-        } catch {
-          localStorage.removeItem('accessToken')
-          setToken(null)
-        }
+      try {
+        const data = await apiGet<User>('/auth/me')
+        loginStore(data)
+      } catch {
+        logoutStore()
+      } finally {
+        setIsLoading(false)
       }
-      setIsLoading(false)
     }
     initAuth()
   }, [])
 
-  const login = (newToken: string, userData: User) => {
-    localStorage.setItem('accessToken', newToken)
-    setToken(newToken)
-    setUser(userData)
+  const login = (userData: User) => {
+    loginStore(userData)
   }
 
-  const logout = () => {
-    localStorage.removeItem('accessToken')
-    setToken(null)
-    setUser(null)
+  const logout = async () => {
+    const API_BASE = import.meta.env.VITE_API_URL || '/api/v1'
+    try {
+      await axios.post(`${API_BASE}/auth/logout`, {}, { withCredentials: true })
+    } catch {}
+    logoutStore()
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!user, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isLoading }}>
       {children}
     </AuthContext.Provider>
   )

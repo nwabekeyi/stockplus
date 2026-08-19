@@ -1,6 +1,7 @@
 package com.stockmgmt.api.entity;
 
 import com.stockmgmt.api.entity.enumeration.PurchaseStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 import lombok.*;
@@ -41,22 +42,28 @@ public class Purchase {
     private Supplier supplier;
 
     @Column(nullable = false, precision = 12, scale = 2)
+    @Builder.Default
     private BigDecimal totalAmount = BigDecimal.ZERO;
 
     @Column(nullable = false, precision = 12, scale = 2)
+    @Builder.Default
     private BigDecimal totalCost = BigDecimal.ZERO;
 
     @Column(nullable = false, precision = 12, scale = 2)
+    @Builder.Default
     private BigDecimal amountPaid = BigDecimal.ZERO;
 
     @Column(nullable = false, precision = 12, scale = 2)
+    @Builder.Default
     private BigDecimal outstanding = BigDecimal.ZERO;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private PurchaseStatus status = PurchaseStatus.PENDING;
 
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime purchaseDate = LocalDateTime.now();
 
     @Column
@@ -66,5 +73,6 @@ public class Purchase {
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private List<PurchaseItem> items = new ArrayList<>();
 }

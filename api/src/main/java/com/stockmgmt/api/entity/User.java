@@ -2,6 +2,7 @@ package com.stockmgmt.api.entity;
 
 import com.stockmgmt.api.entity.enumeration.SubscriptionStatus;
 import com.stockmgmt.api.entity.enumeration.UserRole;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 import lombok.*;
@@ -53,6 +54,7 @@ public class User implements UserDetails {
     @OneToOne(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Store store;
 
     @Transient

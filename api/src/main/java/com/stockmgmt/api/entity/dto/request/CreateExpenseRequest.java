@@ -1,7 +1,6 @@
 package com.stockmgmt.api.entity.dto.request;
 
 import com.stockmgmt.api.entity.enumeration.ExpenseCategory;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 

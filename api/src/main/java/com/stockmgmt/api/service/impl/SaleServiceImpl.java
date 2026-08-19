@@ -6,6 +6,7 @@ import com.stockmgmt.api.entity.dto.request.SaleItemRequest;
 import com.stockmgmt.api.entity.dto.response.*;
 import com.stockmgmt.api.entity.enumeration.PaymentStatus;
 import com.stockmgmt.api.entity.enumeration.SubscriptionStatus;
+import com.stockmgmt.api.event.DashboardStatsChangedEvent;
 import com.stockmgmt.api.exception.ResourceNotFoundException;
 import com.stockmgmt.api.repository.*;
 import com.stockmgmt.api.service.ProductService;
@@ -14,6 +15,7 @@ import com.stockmgmt.api.service.StoreService;
 import com.stockmgmt.api.service.SubscriptionService;
 import com.stockmgmt.api.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ public class SaleServiceImpl implements SaleService {
     private final AuditLogService auditLogService;
     private final SupplierRepository supplierRepository;
     private final ExpenseRepository expenseRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -107,6 +110,8 @@ public class SaleServiceImpl implements SaleService {
         sale.setProfit(totalAmount.subtract(totalCost).subtract(sale.getDiscount()));
 
         saleRepository.save(sale);
+
+        eventPublisher.publishEvent(new DashboardStatsChangedEvent(storeId));
 
         if (customer != null && sale.getPaymentStatus() == PaymentStatus.PENDING) {
             BigDecimal amountOwed = sale.getTotalAmount().subtract(sale.getDiscount());

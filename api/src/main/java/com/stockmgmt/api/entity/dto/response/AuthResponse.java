@@ -18,5 +18,4 @@ public class AuthResponse {
     private UUID storeId;
     private String storeName;
     private String storeCurrency;
-    private String accessToken;
 }

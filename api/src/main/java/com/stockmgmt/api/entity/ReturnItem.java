@@ -1,5 +1,6 @@
 package com.stockmgmt.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
@@ -22,10 +23,15 @@ public class ReturnItem {
 
     @ManyToOne
     @JoinColumn(name = "return_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Return returnRecord;
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Product product;
 
     @Column(nullable = false)

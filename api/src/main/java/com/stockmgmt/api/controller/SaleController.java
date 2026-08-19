@@ -36,11 +36,6 @@ public class SaleController {
         return ResponseEntity.ok(saleService.getSale(storeId, saleId));
     }
 
-    @GetMapping("/stores/{storeId}/dashboard/stats")
-    public ResponseEntity<DashboardStatsResponse> getStats(@PathVariable UUID storeId) {
-        return ResponseEntity.ok(saleService.getDashboardStats(storeId));
-    }
-
     @GetMapping("/stores/{storeId}/sales/range")
     public ResponseEntity<List<SaleResponse>> getSalesByRange(@PathVariable UUID storeId,
                                                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,

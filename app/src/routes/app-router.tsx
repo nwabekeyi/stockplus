@@ -3,6 +3,7 @@ import AppLayout from '../components/layout/AppLayout'
 import LoginPage from '../pages/auth/LoginPage'
 import RegisterPage from '../pages/auth/RegisterPage'
 import RegisterBusinessPage from '../pages/auth/RegisterBusinessPage'
+import LandingPage from '../pages/landing/LandingPage'
 import DashboardPage from '../pages/dashboard/DashboardPage'
 import InventoryPage from '../pages/inventory/InventoryPage'
 import SalesPage from '../pages/transactions/SalesPage'
@@ -22,10 +23,11 @@ import BeksTechPage from '../pages/beks-tech/BeksTechPage'
 import ReturnsPage from '../pages/returns/ReturnsPage'
 import NotificationsPage from '../pages/notifications/NotificationsPage'
 import PricingPage from '../pages/pricing/PricingPage'
+import SettingsPage from '../pages/settings/SettingsPage'
 import { useAuth } from '../contexts/AuthContext'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
 
   if (isLoading) {
     return (
@@ -42,10 +44,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
+  if (user && !user.hasStore) {
+    return <Navigate to="/register-business" replace />
+  }
+
   return <>{children}</>
 }
 
 export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <LandingPage />,
+  },
   {
     path: '/login',
     element: <LoginPage />,
@@ -66,7 +76,8 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { index: true, element: <DashboardPage /> },
+      { index: true, element: <Navigate to="/dashboard" replace /> },
+      { path: 'dashboard', element: <DashboardPage /> },
       { path: 'inventory', element: <InventoryPage /> },
       { path: 'transactions', element: <SalesPage /> },
       { path: 'purchases', element: <PurchasesPage /> },
@@ -85,6 +96,7 @@ export const router = createBrowserRouter([
       { path: 'returns', element: <ReturnsPage /> },
       { path: 'notifications', element: <NotificationsPage /> },
       { path: 'beks-tech', element: <BeksTechPage /> },
+      { path: 'settings', element: <SettingsPage /> },
     ],
   },
 ])

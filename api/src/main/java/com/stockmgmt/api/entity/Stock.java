@@ -29,9 +29,11 @@ public class Stock {
     private Product product;
 
     @Column(nullable = false)
+    @Builder.Default
     private int quantity = 0;
 
     @Column(nullable = false)
+    @Builder.Default
     private int lowStockThreshold = 10;
 
     @Column(nullable = false)
@@ -40,6 +42,7 @@ public class Stock {
     private UnitOfMeasure unit = UnitOfMeasure.PIECE;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean trackInventory = true;
 
     @Column

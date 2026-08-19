@@ -1,6 +1,7 @@
 package com.stockmgmt.api.entity;
 
 import com.stockmgmt.api.entity.enumeration.ProductLocationType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 import lombok.*;
@@ -25,6 +26,7 @@ public class ProductLocation {
     @JoinColumn(name = "product_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Product product;
 
     @Column(nullable = false)

@@ -2,6 +2,9 @@ package com.stockmgmt.api.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -45,6 +48,7 @@ public class Product {
     private String barcode;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean active = true;
 
     @Column(nullable = false)
@@ -88,23 +92,27 @@ public class Product {
     @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Stock stock;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private java.util.List<ProductImage> images = new java.util.ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private java.util.List<ProductLocation> locations = new java.util.ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private java.util.List<WholesalePriceRule> wholesaleRules = new java.util.ArrayList<>();
 }

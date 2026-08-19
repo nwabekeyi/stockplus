@@ -1,35 +1,29 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../services/api-client'
-import { DashboardStats, Sale, Subscription, Customer, Product } from '../../types'
+import { DashboardStats, Sale, Customer } from '../../types'
 import { useStoreId } from '../../hooks/use-store-id'
-import { IconShoppingCart, IconAlertTriangle, IconPlus } from '../../components/common/icons'
+import { IconShoppingCart, IconPlus } from '../../components/common/icons'
 
 export default function DashboardPage() {
   const storeId = useStoreId()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recentSales, setRecentSales] = useState<Sale[]>([])
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
-  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
   const [totalCustomerDebt, setTotalCustomerDebt] = useState(0)
 
   useEffect(() => {
     const fetchData = async () => {
       if (!storeId) return
       try {
-        const [statsData, salesData, subData, customersData, productsData] = await Promise.all([
+        const [statsData, salesData, customersData] = await Promise.all([
           apiGet<DashboardStats>(`/stores/${storeId}/dashboard/stats`),
           apiGet<Sale[]>(`/stores/${storeId}/sales`),
-          apiGet<Subscription>(`/subscriptions/current?storeId=${storeId}`).catch(() => null),
           apiGet<Customer[]>(`/stores/${storeId}/customers`).catch(() => []),
-          apiGet<Product[]>(`/stores/${storeId}/products`).catch(() => []),
         ])
         setStats(statsData)
         setRecentSales(salesData.slice(0, 5))
-        setSubscription(subData)
         const debt = (customersData as Customer[]).reduce((sum, c) => sum + c.outstandingBalance, 0)
         setTotalCustomerDebt(debt)
-        setLowStockProducts((productsData as Product[]).filter(p => p.stock && p.stock.quantity <= p.stock.lowStockThreshold).slice(0, 5))
       } finally {
         setLoading(false)
       }
@@ -48,23 +42,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-10 animate-fade-in">
-      
-      <div className="space-y-4">
-        {subscription && subscription.status !== 'ACTIVE' && (
-          <div className="bg-gradient-to-r from-amber-50 to-amber-100/40 border border-amber-200/60 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center shrink-0 shadow-inner">
-                <IconAlertTriangle className="w-6 h-6 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-base font-bold text-amber-900 tracking-tight">Subscription required</p>
-                <p className="text-sm font-medium text-amber-700/80 mt-0.5">Subscribe to a plan to access all features.</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <div className="bg-white rounded-2xl border border-gray-200/70 shadow-sm p-5 flex flex-col">
           <p className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-1.5">Today's Sales</p>
@@ -162,51 +139,6 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-
-      {lowStockProducts.length > 0 && (
-        <div className="bg-white rounded-2xl border border-amber-200/70 shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-              <IconAlertTriangle className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 tracking-tight">Low Stock Alert</h3>
-              <p className="text-sm font-medium text-gray-500">These products are running low.</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {lowStockProducts.map((product) => (
-              <div key={product.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50/80 border border-gray-100">
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{product.name}</p>
-                  <p className="text-xs text-gray-500">SKU: {product.sku}</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-bold text-amber-600">{product.stock?.quantity} {product.stock?.unit}</span>
-                  <p className="text-xs text-gray-500">Min: {product.stock?.lowStockThreshold}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {subscription && (
-        <div className="bg-white rounded-2xl border border-gray-200/70 shadow-sm p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-1">Subscription</p>
-              <p className="text-sm font-medium text-gray-900">{subscription.plan.name}</p>
-              <p className="text-xs text-gray-500">Renews {new Date(subscription.endDate).toLocaleDateString()}</p>
-            </div>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-              subscription.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-            }`}>
-              {subscription.status}
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

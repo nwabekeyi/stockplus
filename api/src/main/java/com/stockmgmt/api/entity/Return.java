@@ -1,9 +1,10 @@
 package com.stockmgmt.api.entity;
 
 import com.stockmgmt.api.entity.enumeration.ReturnStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,10 +27,14 @@ public class Return {
 
     @ManyToOne
     @JoinColumn(name = "store_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Store store;
 
     @ManyToOne
     @JoinColumn(name = "sale_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Sale sale;
 
     @Column(nullable = false, unique = true)
@@ -43,6 +48,7 @@ public class Return {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private ReturnStatus status = ReturnStatus.REQUESTED;
 
     @Column
@@ -52,9 +58,13 @@ public class Return {
     private String approvedBy;
 
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "returnRecord", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private List<ReturnItem> items = new ArrayList<>();
 }

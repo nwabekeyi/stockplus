@@ -1,6 +1,7 @@
 package com.stockmgmt.api.entity;
 
 import com.stockmgmt.api.entity.enumeration.PaymentStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 import lombok.*;
@@ -47,6 +48,7 @@ public class Sale {
     private BigDecimal profit;
 
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime saleDate = LocalDateTime.now();
 
     @Column
@@ -57,15 +59,18 @@ public class Sale {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private PaymentStatus paymentStatus = PaymentStatus.SUCCESS;
 
     @Column
+    @Builder.Default
     private BigDecimal discount = BigDecimal.ZERO;
 
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private java.util.List<SaleItem> items = new java.util.ArrayList<>();
 
     @ManyToOne

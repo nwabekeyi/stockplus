@@ -38,6 +38,7 @@ public class SubscriptionPlan {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private BillingInterval billingInterval = BillingInterval.MONTHLY;
 
     @Column(nullable = false)
@@ -61,6 +62,7 @@ public class SubscriptionPlan {
     private boolean heroPlan = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean whatsappEnabled = false;
 
     @Column(nullable = false)
@@ -72,12 +74,15 @@ public class SubscriptionPlan {
     private BigDecimal whatsappCommerceCommissionPercent = BigDecimal.ZERO;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean advancedReportsEnabled = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean apiEnabled = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean active = true;
 
     @Column

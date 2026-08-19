@@ -1,5 +1,6 @@
 package com.stockmgmt.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 import lombok.*;
@@ -54,12 +55,26 @@ public class Store {
     private String operatingHours;
 
     @Column
+    private String operatingDaysFrom;
+
+    @Column
+    private String operatingDaysTo;
+
+    @Column
+    private String openTime;
+
+    @Column
+    private String closeTime;
+
+    @Column
     private String taxNumber;
 
     @Column(nullable = false)
+    @Builder.Default
     private String currency = "NGN";
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean active = true;
 
     @OneToOne
@@ -71,5 +86,6 @@ public class Store {
     @OneToOne(mappedBy = "store", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Subscription subscription;
 }

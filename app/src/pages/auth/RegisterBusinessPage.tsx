@@ -1,15 +1,15 @@
 import { useState, type FormEvent, useEffect } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import { useAuth } from "../../contexts/AuthContext";
-import { useAuthStore } from "../../store/auth-store";
 import { IconArrowRight, IconPackage } from "../../components/common/icons";
-import { APP_NAME } from "../../constants";
-import { apiPost, ApiError } from "../../services/api-client";
+import Logo from "../../components/common/Logo";
+import Dropzone from "../../components/common/Dropzone";
+import { apiPost, apiUpload, ApiError } from "../../services/api-client";
+import type { User } from "../../types";
 
 export default function RegisterBusinessPage() {
   const navigate = useNavigate();
   const auth = useAuth();
-  const authStore = useAuthStore();
   const [error, setError] = useState<string[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,10 +24,15 @@ export default function RegisterBusinessPage() {
     addressCountry: "",
     phoneNumber: "",
     contactInfo: "",
-    operatingHours: "",
+    operatingDaysFrom: "",
+    operatingDaysTo: "",
+    openTime: "",
+    closeTime: "",
     taxNumber: "",
-    currency: "NGN",
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     if (!auth.isAuthenticated) {
@@ -47,10 +52,19 @@ export default function RegisterBusinessPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
     try {
+      let logoUrl = form.logo;
+      if (logoFile) {
+        setUploadingLogo(true);
+        const uploadResult = await apiUpload('/upload/image', logoFile, 'stores');
+        logoUrl = uploadResult.url;
+        setUploadingLogo(false);
+      }
+
       const store = await apiPost<{ id: string; name: string; currency: string }>('/stores', {
         name: form.name,
-        logo: form.logo,
+        logo: logoUrl,
         addressNumber: form.addressNumber,
         addressStreet: form.addressStreet,
         addressArea: form.addressArea,
@@ -59,24 +73,22 @@ export default function RegisterBusinessPage() {
         addressCountry: form.addressCountry,
         phoneNumber: form.phoneNumber,
         contactInfo: form.contactInfo,
-        operatingHours: form.operatingHours,
+        operatingDaysFrom: form.operatingDaysFrom,
+        operatingDaysTo: form.operatingDaysTo,
+        openTime: form.openTime,
+        closeTime: form.closeTime,
         taxNumber: form.taxNumber,
-        currency: form.currency,
       });
 
       const updatedUser = {
-        ...(authStore.getState().user || auth.user),
+        ...auth.user,
         hasStore: true,
         storeId: store.id,
         storeName: store.name,
         storeCurrency: store.currency,
-      } as any;
+      } as User;
 
-      const currentToken = authStore.getState().token || auth.token;
-      if (currentToken) {
-        auth.login(currentToken, updatedUser);
-        authStore.login(currentToken, updatedUser);
-      }
+      auth.login(updatedUser);
 
       navigate("/", { replace: true });
     } catch (err) {
@@ -87,6 +99,7 @@ export default function RegisterBusinessPage() {
       }
     } finally {
       setIsLoading(false);
+      setUploadingLogo(false);
     }
   };
 
@@ -101,10 +114,7 @@ export default function RegisterBusinessPage() {
           
           <div className="mb-8 text-center md:text-left">
             <Link to="/" className="inline-flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-sm">
-                <IconPackage className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900 tracking-tight">{APP_NAME}</span>
+              <Logo />
             </Link>
             <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
               Register your business
@@ -145,17 +155,15 @@ export default function RegisterBusinessPage() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="logo" className="block text-sm font-semibold text-gray-700">Logo URL <span className="text-gray-400 font-normal">(optional)</span></label>
-              <input
-                id="logo"
-                type="text"
-                value={form.logo}
-                onChange={(e) => { setForm({ ...form, logo: e.target.value }); }}
-                placeholder="https://example.com/logo.png"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200/80 bg-gray-50/50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
-              />
-            </div>
+            <Dropzone
+              label="Store Logo"
+              accept="image/*"
+              maxSizeMB={5}
+              preview={logoPreview}
+              onPreviewChange={setLogoPreview}
+              onValueChange={(url) => setForm({ ...form, logo: url })}
+              onFileSelect={(file) => setLogoFile(file)}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -244,69 +252,73 @@ export default function RegisterBusinessPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label htmlFor="operatingHours" className="block text-sm font-semibold text-gray-700">Operating Hours</label>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-gray-700">Operating Hours</label>
+              <div className="grid grid-cols-2 gap-3">
                 <input
-                  id="operatingHours"
                   type="text"
-                  value={form.operatingHours}
-                  onChange={(e) => { setForm({ ...form, operatingHours: e.target.value }); }}
-                  placeholder="Mon-Fri 8am - 6pm"
+                  value={form.operatingDaysFrom}
+                  onChange={(e) => { setForm({ ...form, operatingDaysFrom: e.target.value }); }}
+                  placeholder="From (e.g. Mon)"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200/80 bg-gray-50/50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
+                />
+                <input
+                  type="text"
+                  value={form.operatingDaysTo}
+                  onChange={(e) => { setForm({ ...form, operatingDaysTo: e.target.value }); }}
+                  placeholder="To (e.g. Fri)"
                   className="w-full px-4 py-3 rounded-xl border border-gray-200/80 bg-gray-50/50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label htmlFor="taxNumber" className="block text-sm font-semibold text-gray-700">Tax Number</label>
+              <div className="grid grid-cols-2 gap-3 mt-2">
                 <input
-                  id="taxNumber"
-                  type="text"
-                  value={form.taxNumber}
-                  onChange={(e) => { setForm({ ...form, taxNumber: e.target.value }); }}
-                  placeholder="TIN / VAT ID"
+                  type="time"
+                  value={form.openTime}
+                  onChange={(e) => { setForm({ ...form, openTime: e.target.value }); }}
+                  placeholder="Open time"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200/80 bg-gray-50/50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
+                />
+                <input
+                  type="time"
+                  value={form.closeTime}
+                  onChange={(e) => { setForm({ ...form, closeTime: e.target.value }); }}
+                  placeholder="Close time"
                   className="w-full px-4 py-3 rounded-xl border border-gray-200/80 bg-gray-50/50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label htmlFor="contactInfo" className="block text-sm font-semibold text-gray-700">Contact Info</label>
-                <input
-                  id="contactInfo"
-                  type="text"
-                  value={form.contactInfo}
-                  onChange={(e) => { setForm({ ...form, contactInfo: e.target.value }); }}
-                  placeholder="support@example.com"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200/80 bg-gray-50/50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="currency" className="block text-sm font-semibold text-gray-700">Currency</label>
-                <select
-                  id="currency"
-                  value={form.currency}
-                  onChange={(e) => { setForm({ ...form, currency: e.target.value }); }}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200/80 bg-gray-50/50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
-                >
-                  <option value="NGN">NGN - ₦</option>
-                  <option value="USD">USD - $</option>
-                  <option value="EUR">EUR - €</option>
-                  <option value="GBP">GBP - £</option>
-                  <option value="GHS">GHS - GH₵</option>
-                  <option value="KES">KES - KSh</option>
-                  <option value="ZAR">ZAR - R</option>
-                </select>
-              </div>
+            <div className="space-y-1.5">
+              <label htmlFor="taxNumber" className="block text-sm font-semibold text-gray-700">Tax Number</label>
+              <input
+                id="taxNumber"
+                type="text"
+                value={form.taxNumber}
+                onChange={(e) => { setForm({ ...form, taxNumber: e.target.value }); }}
+                placeholder="TIN / VAT ID"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200/80 bg-gray-50/50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="contactInfo" className="block text-sm font-semibold text-gray-700">Contact Info</label>
+              <input
+                id="contactInfo"
+                type="text"
+                value={form.contactInfo}
+                onChange={(e) => { setForm({ ...form, contactInfo: e.target.value }); }}
+                placeholder="support@example.com"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200/80 bg-gray-50/50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
+              />
             </div>
 
             <div className="pt-2">
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || uploadingLogo}
                 className="w-full justify-center py-6 text-base shadow-md bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 active:bg-primary-700 transition-all disabled:opacity-40 disabled:pointer-events-none inline-flex items-center justify-center gap-2"
               >
-                {isLoading ? "Setting up business..." : "Complete Setup"}
+                {isLoading || uploadingLogo ? "Setting up business..." : "Complete Setup"}
                 <IconArrowRight className="w-5 h-5" />
               </button>
             </div>
