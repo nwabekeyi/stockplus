@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import axios from 'axios'
-import { apiGet } from '../services/api-client'
+import { apiGet, syncOfflineQueue } from '../services/api-client'
 import { useAuthStore } from '../store/auth-store'
 import type { User } from '../types'
 
@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    window.addEventListener('online', syncOfflineQueue)
     const initAuth = async () => {
       try {
         const data = await apiGet<User>('/auth/me')
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     initAuth()
+    return () => window.removeEventListener('online', syncOfflineQueue)
   }, [])
 
   const login = (userData: User) => {

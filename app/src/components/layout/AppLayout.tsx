@@ -171,6 +171,7 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
     { to: "/purchases", icon: IconTruck, label: "Purchases", match: (p: string) => p.startsWith("/purchases") },
     { to: "/suppliers", icon: IconUsers, label: "Suppliers", match: (p: string) => p.startsWith("/suppliers") },
     { to: "/customers", icon: IconUserPlus, label: "Customers", match: (p: string) => p.startsWith("/customers") },
+    { to: "/workers", icon: IconUser, label: "Workers", match: (p: string) => p.startsWith("/workers") },
     { to: "/expenses", icon: IconCreditCard, label: "Expenses", match: (p: string) => p.startsWith("/expenses") },
     { to: "/reports", icon: IconBarChart2, label: "Reports", match: (p: string) => p.startsWith("/reports") },
     { to: "/returns", icon: IconReceipt, label: "Returns", match: (p: string) => p.startsWith("/returns") },

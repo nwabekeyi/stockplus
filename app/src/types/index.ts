@@ -29,7 +29,13 @@ export interface User {
   storeId?: string
   storeName?: string
   storeCurrency?: string
+  planId?: string
+  planName?: string
+  canUseCloudSync?: boolean
+  workerRole?: string
+  permissions?: string[]
 }
+
 
 export interface AuthResponse {
   id: string
@@ -41,7 +47,13 @@ export interface AuthResponse {
   storeId?: string
   storeName?: string
   storeCurrency?: string
+  planId?: string
+  planName?: string
+  canUseCloudSync?: boolean
+  workerRole?: string
+  permissions?: string[]
 }
+
 
 export interface Store {
   id: string

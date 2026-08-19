@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
+@RestController
 @RequestMapping("/api/v1/webhooks")
 @RequiredArgsConstructor
 public class WebhookController {
@@ -92,34 +93,76 @@ public class WebhookController {
     }
 
     @PostMapping("/payments/webhook/paystack")
-    public ResponseEntity<?> handlePaystackWebhook(@RequestBody Map<String, Object> payload,
+    public ResponseEntity<?> handlePaystackWebhook(@RequestBody String rawPayload,
                                                     @RequestHeader("x-paystack-signature") String signature) {
-        String event = (String) payload.get("event");
-        Map<String, Object> data = (Map<String, Object>) payload.get("data");
+        if (!isValidPaystackSignature(rawPayload, signature)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Invalid Paystack signature"));
+        }
 
-        if ("subscription.create".equals(event) || "charge.success".equals(event)) {
-            String reference = (String) data.get("reference");
-            String status = (String) data.get("status");
+        try {
+            Map<String, Object> payload = new com.fasterxml.jackson.databind.ObjectMapper().readValue(rawPayload, Map.class);
+            String event = (String) payload.get("event");
+            Map<String, Object> data = (Map<String, Object>) payload.get("data");
 
-            Optional<Subscription> subOpt = subscriptionRepository.findAll().stream()
-                    .filter(s -> reference.contains(s.getPaystackSubscriptionCode()))
-                    .findFirst();
+            if (data == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Missing Paystack data"));
+            }
 
-            if (subOpt.isPresent()) {
-                Subscription subscription = subOpt.get();
-                if ("success".equalsIgnoreCase(status)) {
-                    subscription.setStatus(SubscriptionStatus.ACTIVE);
-                    subscription.setPaymentStatus(PaymentStatus.SUCCESS);
-                    subscriptionRepository.save(subscription);
-                } else {
-                    subscription.setStatus(SubscriptionStatus.EXPIRED);
-                    subscription.setPaymentStatus(PaymentStatus.FAILED);
+            if ("subscription.create".equals(event) || "charge.success".equals(event) || "invoice.payment_failed".equals(event)) {
+                String reference = (String) data.get("reference");
+                String status = (String) data.get("status");
+                Map<String, Object> metadata = (Map<String, Object>) data.get("metadata");
+                String subscriptionCode = data.get("subscription_code") instanceof String code ? code : reference;
+                String authorizationCode = data.get("authorization") instanceof Map<?, ?> authorization
+                        ? Objects.toString(authorization.get("authorization_code"), null)
+                        : null;
+
+                Optional<Subscription> subOpt = Optional.empty();
+                if (metadata != null && metadata.get("subscription_id") != null) {
+                    subOpt = subscriptionRepository.findById(UUID.fromString(metadata.get("subscription_id").toString()));
+                }
+                if (subOpt.isEmpty() && reference != null) {
+                    subOpt = subscriptionRepository.findByPaystackSubscriptionCode(reference);
+                }
+
+                if (subOpt.isPresent()) {
+                    Subscription subscription = subOpt.get();
+                    subscription.setPaystackSubscriptionCode(subscriptionCode);
+                    if (authorizationCode != null) {
+                        subscription.setPaystackAuthorizationCode(authorizationCode);
+                    }
+
+                    if ("success".equalsIgnoreCase(status) || "subscription.create".equals(event)) {
+                        subscription.setStatus(SubscriptionStatus.ACTIVE);
+                        subscription.setPaymentStatus(PaymentStatus.SUCCESS);
+                    } else {
+                        subscription.setStatus(SubscriptionStatus.EXPIRED);
+                        subscription.setPaymentStatus(PaymentStatus.FAILED);
+                    }
                     subscriptionRepository.save(subscription);
                 }
             }
-        }
 
-        return ResponseEntity.ok(Map.of("status", "success"));
+            return ResponseEntity.ok(Map.of("status", "success"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    private boolean isValidPaystackSignature(String rawPayload, String signature) {
+        try {
+            SecretKeySpec keySpec = new SecretKeySpec(appProperties.getPaystack().getSecretKey().getBytes(), "HmacSHA512");
+            Mac mac = Mac.getInstance("HmacSHA512");
+            mac.init(keySpec);
+            byte[] hash = mac.doFinal(rawPayload.getBytes());
+            StringBuilder expected = new StringBuilder();
+            for (byte b : hash) {
+                expected.append(String.format("%02x", b));
+            }
+            return expected.toString().equals(signature);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @GetMapping("/payments/webhook/paystack/verify")

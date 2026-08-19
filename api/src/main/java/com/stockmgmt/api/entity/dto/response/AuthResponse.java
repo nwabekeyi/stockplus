@@ -18,4 +18,7 @@ public class AuthResponse {
     private UUID storeId;
     private String storeName;
     private String storeCurrency;
+    private UUID planId;
+    private String planName;
+    private boolean canUseCloudSync;
 }

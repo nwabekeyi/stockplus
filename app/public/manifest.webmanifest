@@ -1,0 +1,9 @@
+{
+  "name": "StockPulse",
+  "short_name": "StockPulse",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f766e",
+  "description": "Offline-ready inventory and POS workspace"
+}

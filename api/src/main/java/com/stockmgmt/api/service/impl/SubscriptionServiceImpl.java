@@ -89,6 +89,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public CommerceFeeQuoteResponse quoteCommerceFees(CommerceFeeQuoteRequest request) {
         SubscriptionPlan plan = planRepository.findById(request.getPlanId())
                 .orElseThrow(() -> new ResourceNotFoundException("Plan not found"));
+        if ("Free Offline".equalsIgnoreCase(plan.getName())) {
+            throw new RuntimeException("Free Offline workspaces do not support commerce fee quotes");
+        }
         BigDecimal commissionPercent = plan.getWhatsappCommerceCommissionPercent();
         BigDecimal platformCommission = request.getOrderAmount()
                 .multiply(commissionPercent)
@@ -114,21 +117,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         SubscriptionPlan plan = planRepository.findById(request.getPlanId())
                 .orElseThrow(() -> new ResourceNotFoundException("Plan not found"));
+        if ("Free Offline".equalsIgnoreCase(plan.getName())) {
+            throw new RuntimeException("Free Offline workspaces do not use Paystack checkout");
+        }
 
         Subscription existing = subscriptionRepository.findByStore_Id(storeId).orElse(null);
-        if (existing != null && existing.getStatus() == SubscriptionStatus.ACTIVE) {
+        if (existing != null && existing.getStatus() == SubscriptionStatus.ACTIVE && !"Free Offline".equalsIgnoreCase(existing.getPlan().getName())) {
             throw new RuntimeException("Active subscription exists. Cancel before changing.");
         }
 
-        Subscription subscription = Subscription.builder()
-                .store(store)
-                .plan(plan)
-                .status(SubscriptionStatus.PENDING)
-                .paymentStatus(PaymentStatus.PENDING)
-                .startDate(LocalDateTime.now())
-                .endDate(request.getBillingInterval() == BillingInterval.YEARLY ? LocalDateTime.now().plusYears(1) : LocalDateTime.now().plusMonths(1))
-                .autoRenew(true)
-                .build();
+        Subscription subscription = existing == null ? Subscription.builder().store(store).build() : existing;
+        subscription.setPlan(plan);
+        subscription.setStatus(SubscriptionStatus.PENDING);
+        subscription.setPaymentStatus(PaymentStatus.PENDING);
+        subscription.setStartDate(LocalDateTime.now());
+        subscription.setEndDate(request.getBillingInterval() == BillingInterval.YEARLY ? LocalDateTime.now().plusYears(1) : LocalDateTime.now().plusMonths(1));
+        subscription.setAutoRenew(true);
 
         subscriptionRepository.save(subscription);
 
